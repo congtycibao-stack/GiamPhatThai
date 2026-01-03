@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khảo sát Di chuyển - CI BAO CO., LTD</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <style>
+        /* CSS GIAO DIỆN CHUNG (GIỮ NGUYÊN) */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 0; color: #333; }
+        .container { max-width: 500px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; }
+        .company-header { text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
+        .company-name { font-size: 18px; font-weight: 800; color: #2c3e50; text-transform: uppercase; margin: 0; letter-spacing: 1px; }
+        .form-title { font-size: 16px; font-weight: 700; color: #007bff; margin: 10px 0 0; text-transform: uppercase; }
+        .form-desc { font-size: 13px; color: #666; margin-top: 5px; font-style: italic; }
+        .form-group { margin-bottom: 15px; position: relative; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #d1d9e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; transition: 0.3s; }
+        
+        /* Select2 Custom */
+        .select2-container .select2-selection--single { height: 45px !important; border: 1px solid #d1d9e6 !important; border-radius: 8px !important; padding: 8px; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { top: 10px !important; }
+        
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background-color: #007bff; color: white; box-shadow: 0 4px 10px rgba(0,123,255,0.3); }
+        .btn-disabled { background-color: #ccc; color: #666; cursor: not-allowed; box-shadow: none; }
+
+        .suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; z-index: 10; display: none; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
+        .suggestion-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .suggestion-item:hover { background-color: #f8f9fa; color: #007bff; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .popup-card { background: white; padding: 30px; border-radius: 15px; max-width: 450px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from {transform: scale(0.8); opacity: 0;} to {transform: scale(1); opacity: 1;} }
+        .popup-icon { font-size: 50px; margin-bottom: 15px; display: block; }
+        .popup-title { font-size: 20px; font-weight: 800; color: #2c3e50; margin: 0 0 10px; }
+        .popup-text { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 25px; text-align: justify; }
+        .popup-btn { background: #28a745; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; }
+        .hidden { display: none !important; }
+
+        /* Timer Box */
+        .timer-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px solid #ffeeba; font-weight: bold; font-size: 14px; }
+        .status-closed { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+
+    <div id="welcomeScreen" class="overlay">
+        <div class="popup-card">
+            <span class="popup-icon">🛡️</span>
+            <h3 class="popup-title">THÔNG BÁO QUAN TRỌNG</h3>
+            <div class="popup-text">
+                Chào mừng Quý CBNV Công ty <b>CI BAO</b>.<br><br>
+                Ứng dụng này được xây dựng nhằm mục đích thu thập dữ liệu để tính toán <b>Kiểm kê Khí nhà kính (Phạm vi 3)</b>, phục vụ công tác báo cáo Sở Tài Nguyên & Môi Trường theo quy định của Luật Bảo vệ Môi trường.<br><br>
+                <b>Cam kết bảo mật:</b> Mọi thông tin cá nhân và địa chỉ của bạn sẽ được mã hóa và chỉ sử dụng nội bộ cho mục đích môi trường nêu trên.<br><br>
+                <div style="background:#f0f0f0; padding:10px; border-radius:5px; font-size:13px; border-left:4px solid #007bff;">
+                    <b>ℹ️ Lưu ý mới:</b><br>
+                    - Hệ thống sẽ tự động khóa khi hết thời gian.<br>
+                    - Nếu bạn nộp lại, hệ thống sẽ tự động cập nhật kết quả mới nhất (ghi đè kết quả cũ).
+                </div>
+            </div>
+            <button class="popup-btn" onclick="startSurvey()">TÔI ĐÃ HIỂU VÀ ĐỒNG Ý</button>
+        </div>
+    </div>
+
+    <div id="successScreen" class="overlay hidden">
+        <div class="popup-card">
+            <span class="popup-icon">🌿</span>
+            <h3 class="popup-title" style="color:#28a745">CẬP NHẬT THÀNH CÔNG!</h3>
+            <p class="popup-text" style="text-align: center;">
+                Dữ liệu của bạn đã được ghi nhận.<br>
+                Sự đóng góp của bạn giúp <b>CI BAO</b> tiến gần hơn đến mục tiêu sản xuất xanh và bền vững.<br><br>
+                Chúc bạn một ngày làm việc thật nhiều niềm vui! ❤️
+            </p>
+            <button class="popup-btn" style="background:#007bff" onclick="location.reload()">ĐÓNG VÀ QUAY LẠI</button>
+        </div>
+    </div>
+
+    <div id="mainForm" class="container">
+        <div class="company-header">
+            <h1 class="company-name">CÔNG TY TNHH CI BAO</h1>
+            <h2 class="form-title">PHIẾU THU THẬP THÔNG TIN DI CHUYỂN</h2>
+            <p class="form-desc">(Phục vụ Kiểm kê Khí nhà kính - GHG Inventory)</p>
+        </div>
+
+        <div id="timerDisplay" class="timer-box">Đang tải thời gian khảo sát...</div>
+
+        <div id="surveyContent">
+            <div class="form-group">
+                <label>🔍 Tìm kiếm nhân sự:</label>
+                <input type="text" id="searchInput" placeholder="Nhập Mã thẻ hoặc Họ tên..." autocomplete="off">
+                <div class="suggestions" id="suggestionBox"></div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc; margin-bottom: 20px;">
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size:12px;">Mã Nhân Viên:</label>
+                    <input type="text" id="staffCode" readonly style="background-color: #e9ecef; font-weight:bold;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size:12px;">Họ Tên:</label>
+                    <input type="text" id="fullName" readonly style="background-color: #e9ecef; font-weight:bold;">
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+            <div class="form-group">
+                <label>🛵 Phương tiện đi làm chính:</label>
+                <select id="vehicleType">
+                    <option value="Xe máy (Xăng)">Xe máy (Xăng)</option>
+                    <option value="Xe máy (Điện)">Xe máy (Điện)</option>
+                    <option value="Ô tô (Xăng)">Ô tô (Xăng)</option>
+                    <option value="Ô tô (Dầu)">Ô tô (Dầu)</option>
+                    <option value="Xe đưa rước">Xe đưa rước công ty</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>🏠 Địa chỉ cư trú (Chọn thủ công):</label>
+                <select id="province" style="width: 100%"><option value="">-- Tỉnh/Thành phố --</option></select>
+                <div style="height: 10px;"></div>
+                <select id="district" style="width: 100%"><option value="">-- Quận/Huyện --</option></select>
+                <div style="height: 10px;"></div>
+                <select id="ward" style="width: 100%"><option value="">-- Phường/Xã --</option></select>
+                
+                <input type="text" id="detailAddress" placeholder="Số nhà, tên đường, ấp/thôn/tổ..." style="margin-top: 15px;">
+                
+                <label style="margin-top:15px; color:#d35400;">Quãng đường 1 chiều (Km):</label>
+                <input type="number" id="distanceKm" placeholder="Nhập số Km ước lượng (VD: 5.5)" step="0.1" style="font-weight:bold;">
+            </div>
+
+            <button id="submitBtn" class="btn-primary" onclick="submitForm()">GỬI THÔNG TIN 🚀</button>
+        </div>
+    </div>
+
+<script>
+    function startSurvey() { document.getElementById('welcomeScreen').classList.add('hidden'); document.getElementById('mainForm').style.display = 'block'; }
+
+    const SUPABASE_URL = 'https://gywuxyywloioxhbfybdl.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5d3V4eXl3bG9pb3hoYmZ5YmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTYyMDgsImV4cCI6MjA4Mjk5MjIwOH0.oCRTqibMzqfsGdaDkZ53inAoNR56QWDHQ3fWtmRqfIk';
+    const { createClient } = window.supabase;
+    const dbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let isSurveyOpen = false;
+
+    // --- 1. KIỂM TRA THỜI GIAN KHẢO SÁT ---
+    async function checkSurveyStatus() {
+        const { data } = await dbClient.from('app_config').select('*');
+        if (!data) return; // Nếu chưa cấu hình thì mặc định cho mở hoặc đóng tùy bạn, ở đây giữ nguyên
+        
+        const config = {};
+        data.forEach(item => config[item.key] = item.value);
+
+        if (!config.survey_start || !config.survey_end) return; // Chưa cấu hình thì thôi
+
+        const start = new Date(config.survey_start);
+        const end = new Date(config.survey_end);
+        const now = new Date();
+        const box = document.getElementById('timerDisplay');
+        const content = document.getElementById('surveyContent');
+
+        if (now < start) {
+            isSurveyOpen = false;
+            box.className = "timer-box status-closed";
+            box.innerHTML = `⛔ CHƯA ĐẾN GIỜ KHẢO SÁT<br>Bắt đầu lúc: ${start.toLocaleString('vi-VN')}`;
+            content.style.opacity = "0.5";
+            content.style.pointerEvents = "none";
+        } else if (now > end) {
+            isSurveyOpen = false;
+            box.className = "timer-box status-closed";
+            box.innerHTML = `🔒 ĐÃ HẾT THỜI GIAN KHẢO SÁT<br>Kết thúc lúc: ${end.toLocaleString('vi-VN')}`;
+            content.style.opacity = "0.5";
+            content.style.pointerEvents = "none";
+        } else {
+            isSurveyOpen = true;
+            const diff = end - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            box.innerHTML = `⏳ THỜI GIAN CÒN LẠI: ${days} ngày ${hours} giờ<br>(Đóng vào: ${end.toLocaleString('vi-VN')})`;
+        }
+    }
+    
+    checkSurveyStatus();
+
+    // --- 2. CẤU HÌNH TÌM KIẾM TỈNH THÀNH (SELECT2) ---
+    $(document).ready(function() {
+        $('#province').select2({ placeholder: "-- Tìm Tỉnh/Thành phố --" });
+        $('#district').select2({ placeholder: "-- Tìm Quận/Huyện --" });
+        $('#ward').select2({ placeholder: "-- Tìm Phường/Xã --" });
+        $('#province').on('select2:select', function (e) { loadDistricts(); });
+        $('#district').on('select2:select', function (e) { loadWards(); });
+    });
+
+    // --- 3. TÌM KIẾM NHÂN VIÊN (GIỮ NGUYÊN) ---
+    const searchInput = document.getElementById('searchInput');
+    const suggestionBox = document.getElementById('suggestionBox');
+    searchInput.addEventListener('input', async (e) => {
+        const keyword = e.target.value.trim();
+        if (keyword.length < 2) { suggestionBox.style.display = 'none'; return; }
+        const { data } = await dbClient.from('employees').select('*').or(`staff_code.ilike.%${keyword}%,full_name.ilike.%${keyword}%`).limit(5);
+        if (data && data.length > 0) {
+            suggestionBox.innerHTML = ''; suggestionBox.style.display = 'block';
+            data.forEach(emp => {
+                const div = document.createElement('div'); div.className = 'suggestion-item';
+                div.textContent = `${emp.staff_code} - ${emp.full_name}`;
+                div.onclick = () => { document.getElementById('staffCode').value = emp.staff_code; document.getElementById('fullName').value = emp.full_name; searchInput.value = ''; suggestionBox.style.display = 'none'; };
+                suggestionBox.appendChild(div);
+            });
+        } else { suggestionBox.style.display = 'none'; }
+    });
+
+    // --- 4. DATA HÀNH CHÍNH ---
+    const host = "https://provinces.open-api.vn/api/";
+    fetch(host + "?depth=1").then(r=>r.json()).then(d=>{ 
+        let h='<option value="">-- Tỉnh/Thành phố --</option>'; 
+        d.forEach(p=>h+=`<option value="${p.code}">${p.name}</option>`); 
+        document.getElementById('province').innerHTML = h; 
+    });
+    window.loadDistricts = function() { 
+        fetch(host + "p/" + document.getElementById('province').value + "?depth=2").then(r=>r.json()).then(d=>{ 
+            let h='<option value="">-- Quận/Huyện --</option>'; 
+            d.districts.forEach(k=>h+=`<option value="${k.code}">${k.name}</option>`); 
+            document.getElementById('district').innerHTML = h;
+            $('#district').val(null).trigger('change');
+        }); 
+    }
+    window.loadWards = function() { 
+        fetch(host + "d/" + document.getElementById('district').value + "?depth=2").then(r=>r.json()).then(d=>{ 
+            let h='<option value="">-- Phường/Xã --</option>'; 
+            d.wards.forEach(w=>h+=`<option value="${w.code}">${w.name}</option>`); 
+            document.getElementById('ward').innerHTML = h;
+            $('#ward').val(null).trigger('change');
+        }); 
+    }
+
+    // --- 5. GỬI FORM (LOGIC GHI ĐÈ / UPDATE) ---
+    window.submitForm = async function() {
+        if(!isSurveyOpen) return alert("Hiện không phải thời gian khảo sát!");
+
+        const staffCode = document.getElementById('staffCode').value;
+        const fullName = document.getElementById('fullName').value;
+        const vehicle = document.getElementById('vehicleType').value;
+        const dist = parseFloat(document.getElementById('distanceKm').value);
+        const detail = document.getElementById('detailAddress').value;
+        
+        // Validation
+        const p = document.getElementById('province');
+        const d = document.getElementById('district');
+        const w = document.getElementById('ward');
+        if (!staffCode) return alert("Vui lòng chọn nhân viên!");
+        if (isNaN(dist) || dist <= 0) return alert("⚠️ Vui lòng nhập số Km (ước lượng từ nhà đến công ty)!");
+        if (!p.value || !d.value || !w.value || !detail) return alert("Vui lòng chọn đầy đủ địa chỉ!");
+
+        const pText = p.options[p.selectedIndex].text;
+        const dText = d.options[d.selectedIndex].text;
+        const wText = w.options[w.selectedIndex].text;
+        const fullAddress = `${detail}, ${wText}, ${dText}, ${pText}`;
+
+        const btn = document.getElementById('submitBtn');
+        btn.innerText = "ĐANG GỬI...";
+        btn.disabled = true;
+
+        // KIỂM TRA ĐỂ GHI ĐÈ
+        const { data: existingData } = await dbClient.from('emissions').select('id').eq('staff_code', staffCode);
+        
+        let error = null;
+        if (existingData && existingData.length > 0) {
+            // Đã có -> UPDATE
+            const idToUpdate = existingData[0].id;
+            const { error: updateErr } = await dbClient.from('emissions').update({
+                full_name: fullName,
+                vehicle_type: vehicle,
+                address_string: fullAddress,
+                distance_km: dist,
+                working_days: 0, // Reset ngày công khi cập nhật địa chỉ mới
+                co2_total_kg: 0
+            }).eq('id', idToUpdate);
+            error = updateErr;
+        } else {
+            // Chưa có -> INSERT
+            const { error: insertErr } = await dbClient.from('emissions').insert({
+                staff_code: staffCode,
+                full_name: fullName,
+                vehicle_type: vehicle,
+                address_string: fullAddress,
+                distance_km: dist,
+                working_days: 0,
+                co2_total_kg: 0
+            });
+            error = insertErr;
+        }
+
+        if (error) {
+            alert("Lỗi: " + error.message);
+            btn.innerText = "GỬI THÔNG TIN 🚀";
+            btn.disabled = false;
+        } else {
+            document.getElementById('mainForm').style.display = 'none';
+            document.getElementById('successScreen').classList.remove('hidden');
+        }
+    }
+</script>
+</body>
+</html>
