@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-        /* CSS CHUNG */
+        /* CSS CHUNG (GIỮ NGUYÊN) */
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         #loginScreen { max-width: 400px; margin: 100px auto; text-align: center; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
@@ -120,21 +120,6 @@
             <div class="admin-section">
                 <div class="admin-header">🛠️ CÔNG CỤ QUẢN TRỊ HỆ THỐNG</div>
                 
-                <div style="background: white; padding: 15px; border-radius: 6px; border: 2px solid #007bff; margin-bottom: 20px;">
-                    <strong style="color:#007bff; display:block; margin-bottom:10px;">🕒 CÀI ĐẶT THỜI GIAN KHẢO SÁT (Tự động khóa khi hết hạn)</strong>
-                    <div style="display:flex; gap:20px; align-items:flex-end;">
-                        <div style="flex:1">
-                            <label style="font-size:12px; font-weight:bold;">Thời gian Mở:</label>
-                            <input type="datetime-local" id="startTime" style="width:100%">
-                        </div>
-                        <div style="flex:1">
-                            <label style="font-size:12px; font-weight:bold;">Thời gian Đóng:</label>
-                            <input type="datetime-local" id="endTime" style="width:100%">
-                        </div>
-                        <button class="btn btn-blue" onclick="saveConfig()">💾 Lưu Cấu Hình</button>
-                    </div>
-                </div>
-
                 <div class="tool-box">
                     <div class="tool-card">
                         <strong>1. Kiểm tra Tiến độ</strong><br>
@@ -182,41 +167,18 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             loadData();
-            loadConfig(); // Tải giờ giấc
         }
     }
     async function logout() { await adminClient.auth.signOut(); location.reload(); }
 
     async function loadData() {
+        // Range lớn để lấy đủ 20.000 nv
         const { data, error } = await adminClient.from('emissions').select('*').range(0, 19999).order('full_name', { ascending: true });
         if (error) return alert("Lỗi tải dữ liệu!");
         const { count } = await adminClient.from('employees').select('*', { count: 'exact', head: true });
         totalEmpCount = count || 0;
         globalData = data;
         renderKPI(data); renderCharts(data); renderTable(data);
-    }
-
-    // --- CÁC HÀM XỬ LÝ CẤU HÌNH (MỚI) ---
-    async function loadConfig() {
-        const { data } = await adminClient.from('app_config').select('*');
-        if(data) {
-            data.forEach(item => {
-                if(item.key === 'survey_start') document.getElementById('startTime').value = item.value;
-                if(item.key === 'survey_end') document.getElementById('endTime').value = item.value;
-            });
-        }
-    }
-
-    async function saveConfig() {
-        const start = document.getElementById('startTime').value;
-        const end = document.getElementById('endTime').value;
-        if(!start || !end) return alert("Vui lòng chọn đầy đủ thời gian!");
-        
-        // Upsert từng dòng
-        await adminClient.from('app_config').upsert({ key: 'survey_start', value: start });
-        await adminClient.from('app_config').upsert({ key: 'survey_end', value: end });
-        
-        alert("✅ Đã lưu cấu hình thời gian thành công!");
     }
 
     // --- CÁC HÀM CŨ (GIỮ NGUYÊN) ---

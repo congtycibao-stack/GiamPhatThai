@@ -28,7 +28,6 @@
         
         button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-primary { background-color: #007bff; color: white; box-shadow: 0 4px 10px rgba(0,123,255,0.3); }
-        .btn-disabled { background-color: #ccc; color: #666; cursor: not-allowed; box-shadow: none; }
 
         .suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; z-index: 10; display: none; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
         .suggestion-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
@@ -42,10 +41,6 @@
         .popup-text { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 25px; text-align: justify; }
         .popup-btn { background: #28a745; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; }
         .hidden { display: none !important; }
-
-        /* Timer Box */
-        .timer-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px solid #ffeeba; font-weight: bold; font-size: 14px; }
-        .status-closed { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
     </style>
 </head>
 <body>
@@ -59,9 +54,8 @@
                 Ứng dụng này được xây dựng nhằm mục đích thu thập dữ liệu để tính toán <b>Kiểm kê Khí nhà kính (Phạm vi 3)</b>, phục vụ công tác báo cáo Sở Tài Nguyên & Môi Trường theo quy định của Luật Bảo vệ Môi trường.<br><br>
                 <b>Cam kết bảo mật:</b> Mọi thông tin cá nhân và địa chỉ của bạn sẽ được mã hóa và chỉ sử dụng nội bộ cho mục đích môi trường nêu trên.<br><br>
                 <div style="background:#f0f0f0; padding:10px; border-radius:5px; font-size:13px; border-left:4px solid #007bff;">
-                    <b>ℹ️ Lưu ý mới:</b><br>
-                    - Hệ thống sẽ tự động khóa khi hết thời gian.<br>
-                    - Nếu bạn nộp lại, hệ thống sẽ tự động cập nhật kết quả mới nhất (ghi đè kết quả cũ).
+                    <b>ℹ️ Lưu ý:</b><br>
+                    Nếu bạn điền lại phiếu này, hệ thống sẽ tự động cập nhật kết quả mới nhất (ghi đè kết quả cũ).
                 </div>
             </div>
             <button class="popup-btn" onclick="startSurvey()">TÔI ĐÃ HIỂU VÀ ĐỒNG Ý</button>
@@ -74,8 +68,7 @@
             <h3 class="popup-title" style="color:#28a745">CẬP NHẬT THÀNH CÔNG!</h3>
             <p class="popup-text" style="text-align: center;">
                 Dữ liệu của bạn đã được ghi nhận.<br>
-                Sự đóng góp của bạn giúp <b>CI BAO</b> tiến gần hơn đến mục tiêu sản xuất xanh và bền vững.<br><br>
-                Chúc bạn một ngày làm việc thật nhiều niềm vui! ❤️
+                Cảm ơn bạn đã đóng góp cho mục tiêu Xanh của công ty!
             </p>
             <button class="popup-btn" style="background:#007bff" onclick="location.reload()">ĐÓNG VÀ QUAY LẠI</button>
         </div>
@@ -88,55 +81,51 @@
             <p class="form-desc">(Phục vụ Kiểm kê Khí nhà kính - GHG Inventory)</p>
         </div>
 
-        <div id="timerDisplay" class="timer-box">Đang tải thời gian khảo sát...</div>
-
-        <div id="surveyContent">
-            <div class="form-group">
-                <label>🔍 Tìm kiếm nhân sự:</label>
-                <input type="text" id="searchInput" placeholder="Nhập Mã thẻ hoặc Họ tên..." autocomplete="off">
-                <div class="suggestions" id="suggestionBox"></div>
-            </div>
-
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc; margin-bottom: 20px;">
-                <div class="form-group" style="margin-bottom: 10px;">
-                    <label style="font-size:12px;">Mã Nhân Viên:</label>
-                    <input type="text" id="staffCode" readonly style="background-color: #e9ecef; font-weight:bold;">
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label style="font-size:12px;">Họ Tên:</label>
-                    <input type="text" id="fullName" readonly style="background-color: #e9ecef; font-weight:bold;">
-                </div>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
-            <div class="form-group">
-                <label>🛵 Phương tiện đi làm chính:</label>
-                <select id="vehicleType">
-                    <option value="Xe máy (Xăng)">Xe máy (Xăng)</option>
-                    <option value="Xe máy (Điện)">Xe máy (Điện)</option>
-                    <option value="Ô tô (Xăng)">Ô tô (Xăng)</option>
-                    <option value="Ô tô (Dầu)">Ô tô (Dầu)</option>
-                    <option value="Xe đưa rước">Xe đưa rước công ty</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>🏠 Địa chỉ cư trú (Chọn thủ công):</label>
-                <select id="province" style="width: 100%"><option value="">-- Tỉnh/Thành phố --</option></select>
-                <div style="height: 10px;"></div>
-                <select id="district" style="width: 100%"><option value="">-- Quận/Huyện --</option></select>
-                <div style="height: 10px;"></div>
-                <select id="ward" style="width: 100%"><option value="">-- Phường/Xã --</option></select>
-                
-                <input type="text" id="detailAddress" placeholder="Số nhà, tên đường, ấp/thôn/tổ..." style="margin-top: 15px;">
-                
-                <label style="margin-top:15px; color:#d35400;">Quãng đường 1 chiều (Km):</label>
-                <input type="number" id="distanceKm" placeholder="Nhập số Km ước lượng (VD: 5.5)" step="0.1" style="font-weight:bold;">
-            </div>
-
-            <button id="submitBtn" class="btn-primary" onclick="submitForm()">GỬI THÔNG TIN 🚀</button>
+        <div class="form-group">
+            <label>🔍 Tìm kiếm nhân sự:</label>
+            <input type="text" id="searchInput" placeholder="Nhập Mã thẻ hoặc Họ tên..." autocomplete="off">
+            <div class="suggestions" id="suggestionBox"></div>
         </div>
+
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc; margin-bottom: 20px;">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size:12px;">Mã Nhân Viên:</label>
+                <input type="text" id="staffCode" readonly style="background-color: #e9ecef; font-weight:bold;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size:12px;">Họ Tên:</label>
+                <input type="text" id="fullName" readonly style="background-color: #e9ecef; font-weight:bold;">
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <div class="form-group">
+            <label>🛵 Phương tiện đi làm chính:</label>
+            <select id="vehicleType">
+                <option value="Xe máy (Xăng)">Xe máy (Xăng)</option>
+                <option value="Xe máy (Điện)">Xe máy (Điện)</option>
+                <option value="Ô tô (Xăng)">Ô tô (Xăng)</option>
+                <option value="Ô tô (Dầu)">Ô tô (Dầu)</option>
+                <option value="Xe đưa rước">Xe đưa rước công ty</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>🏠 Địa chỉ cư trú (Chọn thủ công):</label>
+            <select id="province" style="width: 100%"><option value="">-- Tỉnh/Thành phố --</option></select>
+            <div style="height: 10px;"></div>
+            <select id="district" style="width: 100%"><option value="">-- Quận/Huyện --</option></select>
+            <div style="height: 10px;"></div>
+            <select id="ward" style="width: 100%"><option value="">-- Phường/Xã --</option></select>
+            
+            <input type="text" id="detailAddress" placeholder="Số nhà, tên đường, ấp/thôn/tổ..." style="margin-top: 15px;">
+            
+            <label style="margin-top:15px; color:#d35400;">Quãng đường 1 chiều (Km):</label>
+            <input type="number" id="distanceKm" placeholder="Nhập số Km ước lượng (VD: 5.5)" step="0.1" style="font-weight:bold;">
+        </div>
+
+        <button id="submitBtn" class="btn-primary" onclick="submitForm()">GỬI THÔNG TIN 🚀</button>
     </div>
 
 <script>
@@ -147,48 +136,7 @@
     const { createClient } = window.supabase;
     const dbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let isSurveyOpen = false;
-
-    // --- 1. KIỂM TRA THỜI GIAN KHẢO SÁT ---
-    async function checkSurveyStatus() {
-        const { data } = await dbClient.from('app_config').select('*');
-        if (!data) return; // Nếu chưa cấu hình thì mặc định cho mở hoặc đóng tùy bạn, ở đây giữ nguyên
-        
-        const config = {};
-        data.forEach(item => config[item.key] = item.value);
-
-        if (!config.survey_start || !config.survey_end) return; // Chưa cấu hình thì thôi
-
-        const start = new Date(config.survey_start);
-        const end = new Date(config.survey_end);
-        const now = new Date();
-        const box = document.getElementById('timerDisplay');
-        const content = document.getElementById('surveyContent');
-
-        if (now < start) {
-            isSurveyOpen = false;
-            box.className = "timer-box status-closed";
-            box.innerHTML = `⛔ CHƯA ĐẾN GIỜ KHẢO SÁT<br>Bắt đầu lúc: ${start.toLocaleString('vi-VN')}`;
-            content.style.opacity = "0.5";
-            content.style.pointerEvents = "none";
-        } else if (now > end) {
-            isSurveyOpen = false;
-            box.className = "timer-box status-closed";
-            box.innerHTML = `🔒 ĐÃ HẾT THỜI GIAN KHẢO SÁT<br>Kết thúc lúc: ${end.toLocaleString('vi-VN')}`;
-            content.style.opacity = "0.5";
-            content.style.pointerEvents = "none";
-        } else {
-            isSurveyOpen = true;
-            const diff = end - now;
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            box.innerHTML = `⏳ THỜI GIAN CÒN LẠI: ${days} ngày ${hours} giờ<br>(Đóng vào: ${end.toLocaleString('vi-VN')})`;
-        }
-    }
-    
-    checkSurveyStatus();
-
-    // --- 2. CẤU HÌNH TÌM KIẾM TỈNH THÀNH (SELECT2) ---
+    // --- CẤU HÌNH TÌM KIẾM TỈNH THÀNH (SELECT2) ---
     $(document).ready(function() {
         $('#province').select2({ placeholder: "-- Tìm Tỉnh/Thành phố --" });
         $('#district').select2({ placeholder: "-- Tìm Quận/Huyện --" });
@@ -197,7 +145,7 @@
         $('#district').on('select2:select', function (e) { loadWards(); });
     });
 
-    // --- 3. TÌM KIẾM NHÂN VIÊN (GIỮ NGUYÊN) ---
+    // --- TÌM KIẾM NHÂN VIÊN ---
     const searchInput = document.getElementById('searchInput');
     const suggestionBox = document.getElementById('suggestionBox');
     searchInput.addEventListener('input', async (e) => {
@@ -215,7 +163,7 @@
         } else { suggestionBox.style.display = 'none'; }
     });
 
-    // --- 4. DATA HÀNH CHÍNH ---
+    // --- DATA HÀNH CHÍNH ---
     const host = "https://provinces.open-api.vn/api/";
     fetch(host + "?depth=1").then(r=>r.json()).then(d=>{ 
         let h='<option value="">-- Tỉnh/Thành phố --</option>'; 
@@ -239,10 +187,8 @@
         }); 
     }
 
-    // --- 5. GỬI FORM (LOGIC GHI ĐÈ / UPDATE) ---
+    // --- GỬI FORM (CƠ CHẾ: CÓ RỒI THÌ UPDATE, CHƯA CÓ THÌ INSERT) ---
     window.submitForm = async function() {
-        if(!isSurveyOpen) return alert("Hiện không phải thời gian khảo sát!");
-
         const staffCode = document.getElementById('staffCode').value;
         const fullName = document.getElementById('fullName').value;
         const vehicle = document.getElementById('vehicleType').value;
@@ -266,24 +212,24 @@
         btn.innerText = "ĐANG GỬI...";
         btn.disabled = true;
 
-        // KIỂM TRA ĐỂ GHI ĐÈ
+        // BƯỚC 1: KIỂM TRA ĐÃ CÓ CHƯA
         const { data: existingData } = await dbClient.from('emissions').select('id').eq('staff_code', staffCode);
         
         let error = null;
         if (existingData && existingData.length > 0) {
-            // Đã có -> UPDATE
+            // CÓ RỒI -> GHI ĐÈ (UPDATE)
             const idToUpdate = existingData[0].id;
             const { error: updateErr } = await dbClient.from('emissions').update({
                 full_name: fullName,
                 vehicle_type: vehicle,
                 address_string: fullAddress,
                 distance_km: dist,
-                working_days: 0, // Reset ngày công khi cập nhật địa chỉ mới
+                working_days: 0, // Reset ngày công
                 co2_total_kg: 0
             }).eq('id', idToUpdate);
             error = updateErr;
         } else {
-            // Chưa có -> INSERT
+            // CHƯA CÓ -> THÊM MỚI (INSERT)
             const { error: insertErr } = await dbClient.from('emissions').insert({
                 staff_code: staffCode,
                 full_name: fullName,
