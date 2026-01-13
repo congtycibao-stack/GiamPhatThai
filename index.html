@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <style>
-        /* CSS GIAO DIỆN CHUẨN */
+        /* CSS GIAO DIỆN CHUẨN (GIỮ NGUYÊN) */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 0; color: #333; }
         .container { max-width: 500px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; }
         .company-header { text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
@@ -33,20 +33,18 @@
         .popup-text { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 25px; text-align: justify; }
         .popup-btn { background: #28a745; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; }
         .hidden { display: none !important; }
+        .alert-box { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 10px 15px; border-radius: 6px; margin-top: 15px; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; }
         
-        /* CSS MỚI CHO HỘP CẢNH BÁO */
-        .alert-box {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-            font-size: 14px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
+        /* CSS FIX LỖI CHECKBOX KTX (Dùng label bao quanh để bấm đâu cũng ăn) */
+        .ktx-option { 
+            display: flex; align-items: center; 
+            background: #e8f5e9; padding: 10px; 
+            border-radius: 8px; border: 1px solid #c3e6cb; 
+            margin-bottom: 15px; cursor: pointer; user-select: none;
         }
+        .ktx-option:hover { background: #d4edda; }
+        .ktx-option input { width: 18px; height: 18px; margin-right: 10px; cursor: pointer; }
+        .ktx-option label { margin: 0; cursor: pointer; color: #155724; font-weight: bold; flex: 1;}
     </style>
 </head>
 <body>
@@ -57,13 +55,11 @@
             <div class="popup-text">
                 Chào mừng Quý CBNV Công ty <b>CI BAO</b>.<br><br>
                 Thực hiện quy định của Luật Bảo vệ Môi trường, công ty cần thu thập dữ liệu quãng đường di chuyển của nhân viên để tính toán <b>Kiểm kê Khí nhà kính (Phạm vi 3)</b>.<br><br>
-                
                 <b>🔒 CAM KẾT BẢO MẬT:</b><br>
                 Chúng tôi hiểu rằng địa chỉ là thông tin cá nhân quan trọng. Công ty cam kết dữ liệu này <b>chỉ được sử dụng nội bộ</b> cho mục đích môi trường, tuyệt đối không chia sẻ cho bên thứ ba.<br><br>
-                
                 <div style="background:#e8f5e9; padding:15px; border-radius:8px; font-size:14px; border-left:5px solid #28a745; text-align: left;">
                     <b>✨ HỖ TRỢ TỰ ĐỘNG:</b><br>
-                    Để thuận tiện cho bạn, hệ thống sẽ <b>TỰ ĐỘNG ĐIỀN ĐỊA CHỈ</b> dựa trên hồ sơ nhân sự có sẵn. Bạn chỉ cần kiểm tra lại và xác nhận.
+                    Hệ thống sẽ <b>TỰ ĐỘNG ĐIỀN ĐỊA CHỈ</b> dựa trên hồ sơ nhân sự. Bạn chỉ cần kiểm tra lại và xác nhận.
                 </div>
             </div>
             <button class="popup-btn" onclick="document.getElementById('welcomeScreen').classList.add('hidden'); document.getElementById('mainForm').style.display='block';">TÔI ĐÃ HIỂU VÀ ĐỒNG Ý</button>
@@ -103,43 +99,50 @@
                 <option value="Ô tô (Xăng)">Ô tô (Xăng)</option>
                 <option value="Ô tô (Dầu)">Ô tô (Dầu)</option>
                 <option value="Xe đưa rước">Xe đưa rước công ty</option>
+                <option value="Đi bộ">Đi bộ</option>
             </select>
         </div>
         
-        <div class="form-group">
-            <label>🏠 Địa chỉ cư trú (Tự động điền):</label>
-            
-            <select id="province" style="width: 100%"><option value="">-- Chọn Tỉnh/Thành phố --</option></select>
-            <div style="height: 10px;"></div>
-            
-            <select id="ward" style="width: 100%"><option value="">-- Chọn Phường/Xã --</option></select>
-            
-            <input type="text" id="detailAddress" placeholder="Số nhà, tên đường, ấp/thôn/tổ..." style="margin-top: 15px;">
-            
-            <div class="alert-box">
-                <span style="font-size: 20px;">⚠️</span>
-                <span>
-                    <b>LƯU Ý QUAN TRỌNG:</b><br>
-                    Hệ thống tự động điền có thể chưa chính xác 100%. Vui lòng nhìn kỹ <b>Tỉnh</b> và <b>Xã/Phường</b> ở trên. Nếu sai, hãy bấm vào để chọn lại.
-                </span>
-            </div>
+        <label class="ktx-option" for="isKTX">
+            <input type="checkbox" id="isKTX" onchange="toggleAddressFields()">
+            <span>🏠 Tôi ở KTX Nhà máy (Không cần nhập địa chỉ)</span>
+        </label>
 
-            <label style="margin-top:20px; color:#007bff;">Quãng đường 1 chiều (Km):</label>
-            <input type="number" id="distanceKm" placeholder="Nhập số Km ước lượng (VD: 5.5)" step="0.1" style="font-weight:bold;">
+        <div id="addressSection">
+            <div class="form-group">
+                <label>🏠 Địa chỉ cư trú (Tự động điền):</label>
+                
+                <select id="province" style="width: 100%"><option value="">-- Chọn Tỉnh/Thành phố --</option></select>
+                <div style="height: 10px;"></div>
+                
+                <select id="ward" style="width: 100%"><option value="">-- Chọn Phường/Xã --</option></select>
+                
+                <input type="text" id="detailAddress" placeholder="Số nhà, tên đường, ấp/thôn/tổ..." style="margin-top: 15px;">
+                
+                <div class="alert-box">
+                    <span style="font-size: 20px;">⚠️</span>
+                    <span>
+                        <b>LƯU Ý QUAN TRỌNG:</b><br>
+                        Hệ thống tự động điền có thể chưa chính xác 100%. Vui lòng nhìn kỹ <b>Tỉnh</b> và <b>Xã/Phường</b> ở trên. Nếu sai, hãy bấm vào để chọn lại.
+                    </span>
+                </div>
+
+                <label style="margin-top:20px; color:#007bff;">Quãng đường 1 chiều (Km):</label>
+                <input type="number" id="distanceKm" placeholder="Nhập số Km ước lượng (VD: 5.5)" step="0.1" style="font-weight:bold;">
+            </div>
         </div>
         
         <button id="submitBtn" class="btn-primary" onclick="submitForm()">GỬI THÔNG TIN 🚀</button>
     </div>
 
 <script>
-    // --- 1. KẾT NỐI SERVER (SUPABASE) ---
+    // --- 1. KẾT NỐI SERVER ---
     const SUPABASE_URL = 'https://gywuxyywloioxhbfybdl.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5d3V4eXl3bG9pb3hoYmZ5YmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTYyMDgsImV4cCI6MjA4Mjk5MjIwOH0.oCRTqibMzqfsGdaDkZ53inAoNR56QWDHQ3fWtmRqfIk';
     const { createClient } = window.supabase;
     const dbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- 2. DỮ LIỆU ĐỊA CHÍNH (ĐỊNH NGHĨA DANH SÁCH XÃ PHƯỜNG) ---
-    // Danh sách Đồng Nai chuẩn xác (như file bạn cung cấp)
+    // --- 2. DỮ LIỆU ĐỊA CHÍNH ---
     let FULL_DB = {
         "Tỉnh Đồng Nai": [
             "Phường Biên Hoà", "Phường Trấn Biên", "Phường Tam Hiệp", "Phường Long Bình", "Phường Trảng Dài", "Phường Hố Nai", "Phường Long Hưng", "Xã Đại Phước", "Xã Nhơn Trạch", "Xã Phước An", "Xã Phước Thái", "Xã Long Phước", "Xã Bình An", "Xã Long Thành", "Xã An Phước", "Xã An Viễn", "Xã Bình Minh", "Xã Trảng Bom", "Xã Bàu Hàm", "Xã Hưng Thịnh", "Xã Dầu Giây", "Xã Gia Kiệm", "Xã Thống Nhất", "Phường Bình Lộc", "Phường Bảo Vinh", "Phường Xuân Lập", "Phường Long Khánh", "Phường Hàng Gòn", "Xã Xuân Quế", "Xã Xuân Đường", "Xã Cẩm Mỹ", "Xã Sông Ray", "Xã Xuân Đông", "Xã Xuân Định", "Xã Xuân Phú", "Xã Xuân Lộc", "Xã Xuân Hoà", "Xã Xuân Thành", "Xã Xuân Bắc", "Xã La Ngà", "Xã Định Quán", "Xã Phú Vinh", "Xã Phú Hoà", "Xã Tà Lài", "Xã Nam Cát Tiên", "Xã Tân Phú", "Xã Phú Lâm", "Xã Trị An", "Xã Tân An", "Phường Tân Triều", "Phường Tam Phước", "Phường Phước Tân", "Xã Thanh Sơn", "Xã Đak Lua", "Xã Phú Lý", 
@@ -152,15 +155,25 @@
     $(document).ready(function() {
         $('#province').select2({ placeholder: "-- Chọn Tỉnh/Thành phố --" });
         $('#ward').select2({ placeholder: "-- Chọn Phường/Xã --" });
-        
         loadProvinceList(); 
-
-        $('#province').on('select2:select', function (e) {
-            loadWards(e.params.data.id);
-        });
+        $('#province').on('select2:select', function (e) { loadWards(e.params.data.id); });
     });
 
-    // Hàm nạp danh sách Tỉnh (Online + Offline)
+    // --- LOGIC ẨN HIỆN ĐỊA CHỈ (FIX LỖI) ---
+    function toggleAddressFields() {
+        const isChecked = document.getElementById('isKTX').checked;
+        const addrSection = document.getElementById('addressSection');
+        
+        if (isChecked) {
+            // Nếu chọn KTX -> Ẩn địa chỉ, xóa giá trị Km để tránh gửi nhầm
+            addrSection.style.display = 'none';
+        } else {
+            // Nếu bỏ chọn -> Hiện lại
+            addrSection.style.display = 'block';
+        }
+    }
+
+    // --- CÁC HÀM CŨ GIỮ NGUYÊN ---
     async function loadProvinceList() {
         try {
             const res = await fetch('https://raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN/master/data.json');
@@ -171,27 +184,22 @@
                     tinh.Districts.forEach(h => h.Wards.forEach(x => FULL_DB[tinh.Name].push(x.Name)));
                 }
             });
-        } catch (e) { console.log("Chạy chế độ Offline (Dữ liệu cứng)."); }
-
+        } catch (e) { console.log("Offline Mode"); }
         let provHtml = '<option value="">-- Chọn Tỉnh/Thành phố --</option>';
-        Object.keys(FULL_DB).sort().forEach(prov => {
-            provHtml += `<option value="${prov}">${prov}</option>`;
-        });
+        Object.keys(FULL_DB).sort().forEach(prov => { provHtml += `<option value="${prov}">${prov}</option>`; });
         document.getElementById('province').innerHTML = provHtml;
     }
 
     function loadWards(provinceName, selectedWard = null) {
         let wards = FULL_DB[provinceName] || [];
-        wards.sort((a, b) => b.length - a.length); // Xếp tên dài lên trước
+        wards.sort((a, b) => b.length - a.length);
         let wardHtml = '<option value="">-- Chọn Phường/Xã --</option>';
         wards.forEach(w => { wardHtml += `<option value="${w}">${w}</option>`; });
         document.getElementById('ward').innerHTML = wardHtml;
-        
         if (selectedWard) $('#ward').val(selectedWard).trigger('change');
         else $('#ward').val(null).trigger('change');
     }
 
-    // --- 3. TÌM NHÂN VIÊN & TỰ ĐỘNG ĐIỀN ---
     const searchInput = document.getElementById('searchInput');
     const suggestionBox = document.getElementById('suggestionBox');
 
@@ -199,7 +207,6 @@
         const keyword = e.target.value.trim();
         if (keyword.length < 2) { suggestionBox.style.display = 'none'; return; }
         
-        // Lấy dữ liệu từ Supabase
         const { data } = await dbClient.from('employees').select('*')
             .or(`staff_code.ilike.%${keyword}%,full_name.ilike.%${keyword}%`).limit(5);
 
@@ -213,10 +220,8 @@
                     document.getElementById('fullName').value = emp.full_name; 
                     searchInput.value = ''; 
                     suggestionBox.style.display = 'none';
-                    
-                    // --- KIỂM TRA & TỰ ĐỘNG ĐIỀN ---
                     if (!emp.full_address || emp.full_address.trim() === "") {
-                        alert("⚠️ Cảnh báo: Hệ thống chưa có dữ liệu địa chỉ của nhân viên này.\n(Có thể do Admin chưa nạp lại danh sách mới).\nVui lòng nhập thủ công.");
+                        alert("⚠️ Cảnh báo: Hệ thống chưa có dữ liệu địa chỉ của nhân viên này. Vui lòng nhập thủ công.");
                     } else {
                         autoFillAddress(emp.full_address);
                     }
@@ -226,103 +231,88 @@
         } else { suggestionBox.style.display = 'none'; }
     });
 
-    // --- 4. HÀM ROBOT TÁCH CHUỖI ĐỊA CHỈ (THÔNG MINH) ---
     function removeAccents(str) {
         if(!str) return "";
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                  .replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase();
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase();
     }
 
     function autoFillAddress(fullString) {
-        // Ví dụ input: "SN 37B, ẤP 4, PHỐ 4, PHÚ HÒA, ĐỒNG NAI"
         let searchStr = removeAccents(fullString);
-        let foundProv = "";
-        let foundWard = "";
+        let foundProv = ""; let foundWard = "";
         
-        // B1: Tìm Tỉnh (Ưu tiên Đồng Nai)
         if (searchStr.includes("DONG NAI")) foundProv = "Tỉnh Đồng Nai";
         else {
             for (const prov in FULL_DB) {
-                // So sánh tên tỉnh (bỏ chữ Tỉnh/Thành phố)
                 let provClean = removeAccents(prov).replace("TINH ", "").replace("THANH PHO ", "");
-                if (searchStr.includes(provClean)) {
-                    foundProv = prov; break;
-                }
+                if (searchStr.includes(provClean)) { foundProv = prov; break; }
             }
         }
 
         if (foundProv) {
-            // Chọn Tỉnh trên giao diện
             $('#province').val(foundProv).trigger('change');
-            
-            // B2: Tìm Xã (Quét trong danh sách xã của tỉnh đó)
             const wards = FULL_DB[foundProv] || [];
-            
             for (const w of wards) {
-                // Tạo tên xã rút gọn để so sánh (VD: "Xã Phú Hòa" -> "PHU HOA")
                 let wClean = removeAccents(w).replace("XA ", "").replace("PHUONG ", "").replace("THI TRAN ", "");
-                
-                // Kiểm tra xem trong địa chỉ nhân viên có chứa tên xã này không
-                if (searchStr.includes(wClean)) {
-                    foundWard = w;
-                    break;
-                }
+                if (searchStr.includes(wClean)) { foundWard = w; break; }
             }
-
             if (foundWard) {
-                // Chọn Xã trên giao diện
                 loadWards(foundProv, foundWard);
-                
-                // B3: Tách lấy phần chi tiết (Cắt bỏ Tỉnh và Xã ra khỏi chuỗi gốc)
                 let detail = fullString;
-                
-                // Xóa Tỉnh (Dùng Regex)
                 let provKey = foundProv.replace("Tỉnh ", "").replace("Thành phố ", "");
                 detail = detail.replace(new RegExp(provKey, 'gi'), "").replace(/ĐỒNG NAI/gi, "").replace(/Tỉnh/gi, "").replace(/Thành phố/gi, "");
-                
-                // Xóa Xã
                 let wardKey = foundWard.replace("Xã ", "").replace("Phường ", "");
                 detail = detail.replace(new RegExp(wardKey, 'gi'), "").replace(/Xã/gi, "").replace(/Phường/gi, "");
-                
-                // Làm sạch dấu phẩy dư thừa
-                detail = detail.replace(/,\s*$/, "").replace(/^,\s*/, "") // Xóa phẩy đầu/cuối
-                               .replace(/,\s*,/g, ",") // Xóa phẩy kép
-                               .trim();
-                
+                detail = detail.replace(/,\s*$/, "").replace(/^,\s*/, "").replace(/,\s*,/g, ",").trim();
                 document.getElementById('detailAddress').value = detail;
             } else {
-                // Tìm thấy Tỉnh nhưng không thấy Xã
                 document.getElementById('detailAddress').value = fullString; 
-                alert(`Hệ thống đã chọn ${foundProv}.\nNhưng không tìm thấy tên Xã/Phường khớp với dữ liệu.\nVui lòng chọn Xã/Phường thủ công.`);
+                alert(`Đã chọn ${foundProv}. Không tìm thấy tên Xã/Phường khớp. Vui lòng chọn thủ công.`);
             }
         } else {
-            // Không tìm thấy gì cả
             document.getElementById('detailAddress').value = fullString;
-            alert("Không tự động nhận diện được địa chỉ.\nVui lòng chọn thủ công.");
+            alert("Không nhận diện được Tỉnh. Vui lòng chọn thủ công.");
         }
     }
 
-    // --- 5. GỬI FORM ---
+    // --- GỬI FORM (LOGIC MỚI: KTX HOẶC ĐI BỘ ĐỀU 0 KM) ---
     window.submitForm = async function() {
         const staffCode = document.getElementById('staffCode').value;
         const fullName = document.getElementById('fullName').value;
         const vehicle = document.getElementById('vehicleType').value;
-        const dist = parseFloat(document.getElementById('distanceKm').value);
-        const detail = document.getElementById('detailAddress').value;
-        
-        const p = document.getElementById('province');
-        const w = document.getElementById('ward');
-        
-        if (!staffCode) return alert("Vui lòng chọn nhân viên!");
-        if (isNaN(dist) || dist <= 0) return alert("⚠️ Vui lòng nhập số Km (ước lượng từ nhà đến công ty)!");
-        if (!p.value || !w.value) return alert("Vui lòng chọn Tỉnh và Xã!");
-        if (!detail) return alert("Vui lòng nhập/kiểm tra địa chỉ chi tiết!");
+        const isKTX = document.getElementById('isKTX').checked;
 
-        const pText = p.options[p.selectedIndex].text;
-        const wText = w.options[w.selectedIndex].text;
-        
-        // Ghép địa chỉ hoàn chỉnh
-        const fullAddress = `${detail}, ${wText}, ${pText}`;
+        let fullAddress = "";
+        let dist = 0;
+        let co2 = 0;
+
+        if (!staffCode) return alert("Vui lòng chọn nhân viên!");
+
+        // TRƯỜNG HỢP 1: Ở KTX (Ẩn địa chỉ)
+        if (isKTX) {
+            fullAddress = "KTX Nhà máy";
+            dist = 0;
+            co2 = 0;
+        } 
+        // TRƯỜNG HỢP 2: KHÔNG Ở KTX (KỂ CẢ ĐI BỘ)
+        else {
+            dist = parseFloat(document.getElementById('distanceKm').value);
+            const detail = document.getElementById('detailAddress').value;
+            const p = document.getElementById('province');
+            const w = document.getElementById('ward');
+
+            if (isNaN(dist) || dist <= 0) return alert("⚠️ Vui lòng nhập số Km (ước lượng từ nhà đến công ty)!");
+            if (!p.value || !w.value) return alert("Vui lòng chọn Tỉnh và Xã!");
+            if (!detail) return alert("Vui lòng nhập địa chỉ chi tiết!");
+
+            const pText = p.options[p.selectedIndex].text;
+            const wText = w.options[w.selectedIndex].text;
+            fullAddress = `${detail}, ${wText}, ${pText}`;
+            
+            // Nếu đi bộ mà không ở KTX -> Vẫn tính 0 kg CO2 (Theo yêu cầu)
+            if(vehicle === "Đi bộ") {
+                co2 = 0;
+            }
+        }
 
         const btn = document.getElementById('submitBtn');
         btn.innerText = "ĐANG GỬI...";
@@ -337,7 +327,7 @@
             address_string: fullAddress,
             distance_km: dist,
             working_days: 0,
-            co2_total_kg: 0
+            co2_total_kg: co2 // Mặc định tính sau hoặc 0 nếu KTX/Đi bộ
         };
 
         let error = null;
