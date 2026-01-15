@@ -103,7 +103,7 @@
                     <div class="tool-card">
                         <strong>1. Kiểm tra Tiến độ</strong><br>
                         <span class="tool-desc">Xem ai chưa làm khảo sát.</span>
-                        <button class="btn btn-blue" style="width:100%" onclick="checkMissing()">🕵️ Tìm người chưa nộp</button>
+                        <button class="btn btn-blue" style="width:100%" onclick="checkMissingV19(this)">🕵️ Tìm người chưa nộp (Fix Lỗi)</button>
                     </div>
                     <div class="tool-card">
                         <strong>2. Reset dữ liệu</strong><br>
@@ -186,7 +186,6 @@
     function renderCharts(data) {
         const vehicles = {}; const co2ByVehicle = {};
         data.forEach(item => { const v = item.vehicle_type; vehicles[v] = (vehicles[v] || 0) + 1; co2ByVehicle[v] = (co2ByVehicle[v] || 0) + (item.co2_total_kg || 0); });
-        
         const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true } } };
         if(vehicleChartInstance) vehicleChartInstance.destroy();
         const ctx1 = document.getElementById('vehicleChart').getContext('2d');
@@ -205,11 +204,7 @@
         const wasHidden = (s.style.display === 'none');
         if (wasHidden) s.style.display = 'block';
         alert("Đang tạo PDF... Vui lòng chờ.");
-        const opt = {
-            margin: [0.3, 0.3, 0.3, 0.3], filename: 'BaoCao_KiemKe_CIBAO.pdf', image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+        const opt = { margin: [0.3, 0.3, 0.3, 0.3], filename: 'BaoCao_KiemKe_CIBAO.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
         html2pdf().set(opt).from(element).save().then(() => { if(wasHidden) s.style.display='none'; });
     }
 
@@ -237,125 +232,144 @@
 
     async function resetData() { if(!confirm("CẢNH BÁO: Xóa sạch dữ liệu?")) return; document.getElementById('adminLog').innerText="Đang xóa..."; await adminClient.from('emissions').delete().neq('id', 0); alert("Đã xóa dữ liệu."); loadData(); document.getElementById('adminLog').innerText=""; }
     
-    async function checkMissing() {
-        document.getElementById('adminLog').innerText="Đang dò...";
-        const { data: allEmp } = await adminClient.from('employees').select('staff_code, full_name').range(0, 19999);
-        const submitted = new Set(globalData.map(i => String(i.staff_code).trim()));
-        const missing = allEmp.filter(e => { let c = String(e.staff_code).trim(); if(/^\d+$/.test(c)) c = c.padStart(5,'0'); return !submitted.has(c); });
-        document.getElementById('adminLog').innerText="";
-        if(missing.length > 0 && confirm(`Có ${missing.length} người chưa nộp. Tải Excel?`)) {
-            const ws = XLSX.utils.json_to_sheet(missing); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "ChuaNop"); XLSX.writeFile(wb, "DS_ChuaNop.xlsx");
-        } else alert("Đã nộp đủ!");
+    // --- [HÀM HỖ TRỢ TẢI TOÀN BỘ DỮ LIỆU (KHÔNG GIỚI HẠN)] ---
+    async function fetchAllRecords(table, columns) {
+        let allRows = [];
+        let page = 0;
+        const pageSize = 1000;
+        while (true) {
+            const { data, error } = await adminClient
+                .from(table)
+                .select(columns)
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+            
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            
+            allRows.push(...data);
+            if (data.length < pageSize) break; // Hết dữ liệu
+            page++;
+        }
+        return allRows;
     }
 
-    // --- [HÀM NẠP NHÂN VIÊN V17 - QUÉT MỌI LOẠI FILE] ---
+    // --- [V19] HÀM KIỂM TRA TIẾN ĐỘ CHÍNH XÁC (DÙNG PHÂN TRANG) ---
+    async function checkMissingV19(btn) {
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ Đang quét toàn bộ...";
+        btn.disabled = true;
+        document.getElementById('adminLog').innerText = "Đang tải dữ liệu (có thể mất 10-20s)...";
+
+        try {
+            // 1. Tải TOÀN BỘ danh sách đã nộp (Dùng hàm fetchAllRecords)
+            const submittedData = await fetchAllRecords('emissions', 'staff_code');
+            
+            // 2. Tải TOÀN BỘ danh sách nhân viên
+            const allEmp = await fetchAllRecords('employees', 'staff_code, full_name');
+
+            // 3. Chuẩn hóa để so sánh
+            const normalize = (code) => {
+                if(!code) return "";
+                let c = String(code).trim();
+                if (/^\d+$/.test(c)) c = c.padStart(5, '0'); 
+                return c;
+            };
+
+            const submittedSet = new Set(submittedData.map(i => normalize(i.staff_code)));
+
+            // 4. Lọc
+            const missing = allEmp.filter(emp => {
+                const code = normalize(emp.staff_code);
+                return !submittedSet.has(code);
+            });
+
+            document.getElementById('adminLog').innerText = `Kết quả: Tổng ${allEmp.length} NV - Đã nộp ${submittedSet.size} - Chưa nộp ${missing.length}`;
+
+            if(missing.length > 0) {
+                if(confirm(`Còn ${missing.length} người chưa nộp.\nTải danh sách ngay?`)) {
+                    const ws = XLSX.utils.json_to_sheet(missing); 
+                    const wb = XLSX.utils.book_new(); 
+                    XLSX.utils.book_append_sheet(wb, ws, "ChuaNop"); 
+                    XLSX.writeFile(wb, "DS_ChuaNop_ChuanXac.xlsx");
+                }
+            } else {
+                alert("🎉 Tuyệt vời! Tất cả nhân viên đã hoàn thành.");
+            }
+
+        } catch (err) {
+            alert("Lỗi: " + err.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // --- HÀM NẠP NHÂN VIÊN GIỮ NGUYÊN (V17) ---
     async function uploadEmployees() {
         const f = document.getElementById('newEmpFile'); 
         if (!f.files[0]) return alert("Chưa chọn file!"); 
         if(!confirm("CẢNH BÁO: Thao tác này sẽ XÓA HẾT danh sách cũ.\nBạn chắc chắn chứ?")) return;
         
-        document.getElementById('adminLog').innerText="Đang quét file (V17)...";
+        document.getElementById('adminLog').innerText="Đang quét file...";
         
         const r = new FileReader();
         r.onload = async function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            
             let bestSheetData = [];
             let foundSheetName = "";
 
-            // 1. QUÉT TẤT CẢ CÁC SHEET
-            // Tìm sheet nào có chứa chữ "SỐ THẺ" hoặc "MÃ THẺ"
             for (const sheetName of workbook.SheetNames) {
                 const sheet = workbook.Sheets[sheetName];
                 const rawData = XLSX.utils.sheet_to_json(sheet, {header: 1, defval: ""});
-                
                 let hasHeader = false;
-                // Chỉ quét 20 dòng đầu để tìm tiêu đề
                 for(let i=0; i < Math.min(20, rawData.length); i++) {
                      const rowStr = (rawData[i] || []).join(" ").toUpperCase();
-                     if(rowStr.includes("SỐ THẺ") || rowStr.includes("MÃ THẺ") || rowStr.includes("STAFF_CODE")) {
-                         hasHeader = true; break;
-                     }
+                     if(rowStr.includes("SỐ THẺ") || rowStr.includes("MÃ THẺ") || rowStr.includes("STAFF_CODE")) { hasHeader = true; break; }
                 }
-                
-                // Nếu sheet này có tiêu đề và số dòng nhiều hơn sheet trước -> Chọn
-                if (hasHeader && rawData.length > bestSheetData.length) {
-                    bestSheetData = rawData;
-                    foundSheetName = sheetName;
-                }
+                if (hasHeader && rawData.length > bestSheetData.length) { bestSheetData = rawData; foundSheetName = sheetName; }
             }
 
-            if (bestSheetData.length === 0) return alert("❌ Không tìm thấy cột 'SỐ THẺ' ở bất kỳ sheet nào!");
+            if (bestSheetData.length === 0) return alert("❌ Không tìm thấy cột 'SỐ THẺ'!");
             
-            document.getElementById('adminLog').innerText = `Đang xử lý Sheet: "${foundSheetName}"...`;
-
-            // 2. TÌM VỊ TRÍ CỘT
-            let headerRowIndex = -1;
-            let idxCode = -1, idxName = -1, idxAddress = -1;
-
+            let headerRowIndex = -1, idxCode = -1, idxName = -1, idxAddress = -1;
             for(let i=0; i < Math.min(20, bestSheetData.length); i++) {
-                const row = bestSheetData[i];
-                if(!row) continue;
-                
+                const row = bestSheetData[i]; if(!row) continue;
                 const processedRow = row.map(cell => String(cell).toUpperCase().replace(/\r?\n|\r/g, " ").trim());
-
                 processedRow.forEach((txt, idx) => {
-                    if(txt.includes("SỐ THẺ") || txt.includes("MÃ THẺ") || txt.includes("STAFF_CODE")) idxCode = idx;
-                    else if((txt.includes("HỌ") && txt.includes("TÊN")) || txt.includes("FULL_NAME")) idxName = idx;
+                    if(txt.includes("SỐ THẺ") || txt.includes("MÃ THẺ")) idxCode = idx;
+                    else if(txt.includes("HỌ") && txt.includes("TÊN")) idxName = idx;
                     else if(txt.includes("ĐỊA CHỈ") || txt.includes("DIA CHI")) idxAddress = idx;
                 });
-
-                if(idxCode !== -1) {
-                    headerRowIndex = i;
-                    break;
-                }
+                if(idxCode !== -1) { headerRowIndex = i; break; }
             }
 
-            // 3. TRÍCH XUẤT DỮ LIỆU (BỎ QUA DÒNG TRỐNG)
             const employeesToInsert = [];
             for(let i = headerRowIndex + 1; i < bestSheetData.length; i++) {
-                const row = bestSheetData[i];
-                // Bỏ qua nếu dòng rỗng hoặc không có mã thẻ
-                if(!row || !row[idxCode]) continue;
-
+                const row = bestSheetData[i]; if(!row || !row[idxCode]) continue;
                 let code = String(row[idxCode]).trim();
                 let name = row[idxName] ? String(row[idxName]).trim() : "Chưa cập nhật";
                 let addr = (idxAddress !== -1 && row[idxAddress]) ? String(row[idxAddress]).trim() : "";
-
                 if(code.length > 0) {
-                     // Chuẩn hóa mã thẻ 5 số
                      if(/^\d+$/.test(code)) code = code.padStart(5, '0');
-
-                     employeesToInsert.push({
-                        staff_code: code,
-                        full_name: name,
-                        full_address: addr
-                     });
+                     employeesToInsert.push({ staff_code: code, full_name: name, full_address: addr });
                 }
             }
 
             if(employeesToInsert.length === 0) return alert("Không lọc được dữ liệu nào!");
 
-            // 4. XÓA CŨ - NẠP MỚI
             await adminClient.from('employees').delete().neq('id', 0);
-            
             const CHUNK = 1000;
             let successCount = 0;
             for (let i = 0; i < employeesToInsert.length; i += CHUNK) {
                 const chunk = employeesToInsert.slice(i, i + CHUNK);
                 const { error } = await adminClient.from('employees').insert(chunk);
-                if (error) {
-                    alert("Lỗi Supabase: " + error.message);
-                    break;
-                }
+                if (error) { alert("Lỗi Supabase: " + error.message); break; }
                 successCount += chunk.length;
-                document.getElementById('adminLog').innerText = `Đã nạp ${successCount} / ${employeesToInsert.length}...`;
+                document.getElementById('adminLog').innerText = `Đã nạp ${successCount}/${employeesToInsert.length}...`;
             }
-
             alert(`✅ Đã nạp xong ${successCount} nhân viên!`); 
-            document.getElementById('adminLog').innerText=""; 
-            loadData();
+            document.getElementById('adminLog').innerText=""; loadData();
         };
         r.readAsArrayBuffer(f.files[0]);
     }
