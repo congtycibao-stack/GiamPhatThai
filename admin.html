@@ -58,7 +58,7 @@
             </div>
 
             <div class="kpi-row">
-                <div class="kpi-card"><small>SỐ LƯỢNG KHẢO SÁT</small><span class="kpi-val" id="kpi-users" style="color:#2c3e50">0</span><small id="progress-text" style="color:blue">...</small></div>
+                <div class="kpi-card"><small>SỐ LƯỢNG KHẢO SÁT</small><span class="kpi-val" id="kpi-users" style="color:#2c3e50">Đang tải...</span><small id="progress-text" style="color:blue">...</small></div>
                 <div class="kpi-card"><small>TỔNG QUÃNG ĐƯỜNG (KM)</small><span class="kpi-val" id="kpi-km" style="color:#2980b9">0</span></div>
                 <div class="kpi-card"><small>TỔNG PHÁT THẢI (TẤN CO2e)</small><span class="kpi-val" id="kpi-co2" style="color:#c0392b">0</span></div>
             </div>
@@ -103,7 +103,7 @@
                     <div class="tool-card">
                         <strong>1. Kiểm tra Tiến độ</strong><br>
                         <span class="tool-desc">Xem ai chưa làm khảo sát.</span>
-                        <button class="btn btn-blue" style="width:100%" onclick="checkMissingV19(this)">🕵️ Tìm người chưa nộp (Fix Lỗi)</button>
+                        <button class="btn btn-blue" style="width:100%" onclick="checkMissingV20(this)">🕵️ Tìm người chưa nộp (Chính xác)</button>
                     </div>
                     <div class="tool-card">
                         <strong>2. Reset dữ liệu</strong><br>
@@ -136,7 +136,29 @@
 
     document.getElementById('reportDate').innerText = new Date().toLocaleDateString('vi-VN');
 
-    // --- CÁC HÀM CƠ BẢN GIỮ NGUYÊN ---
+    // --- HÀM HỖ TRỢ TẢI KHÔNG GIỚI HẠN (QUAN TRỌNG) ---
+    // Hàm này giúp vượt qua giới hạn 1000 dòng của Supabase
+    async function fetchAllRecords(table, columns) {
+        let allRows = [];
+        let page = 0;
+        const pageSize = 1000;
+        while (true) {
+            const { data, error } = await adminClient
+                .from(table)
+                .select(columns)
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+            
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            
+            allRows.push(...data);
+            if (data.length < pageSize) break; // Đã hết dữ liệu
+            page++;
+        }
+        return allRows;
+    }
+
+    // --- CÁC HÀM CƠ BẢN ---
     async function login() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -152,13 +174,28 @@
     }
     async function logout() { await adminClient.auth.signOut(); location.reload(); }
 
+    // --- [V20 UPDATE] HÀM LOAD DATA DÙNG FETCH ALL ---
+    // Thay thế hàm loadData cũ bị giới hạn 1000 dòng
     async function loadData() {
-        const { data, error } = await adminClient.from('emissions').select('*').range(0, 19999).order('full_name', { ascending: true });
-        if (error) return alert("Lỗi tải dữ liệu!");
-        const { count } = await adminClient.from('employees').select('*', { count: 'exact', head: true });
-        totalEmpCount = count || 0;
-        globalData = data;
-        renderKPI(data); renderCharts(data); renderTable(data);
+        document.getElementById('kpi-users').innerText = "Đang tải...";
+        try {
+            // 1. Tải TOÀN BỘ dữ liệu phát thải (Không giới hạn)
+            const data = await fetchAllRecords('emissions', '*');
+            
+            // 2. Sắp xếp theo tên
+            data.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+            // 3. Đếm tổng nhân viên (Chỉ cần count, không cần tải hết về)
+            const { count } = await adminClient.from('employees').select('*', { count: 'exact', head: true });
+            totalEmpCount = count || 0;
+            
+            globalData = data;
+            renderKPI(data); 
+            renderCharts(data); 
+            renderTable(data);
+        } catch (error) {
+            alert("Lỗi tải dữ liệu: " + error.message);
+        }
     }
     
     function renderKPI(data) {
@@ -172,15 +209,25 @@
 
     function renderTable(data) {
         const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
-        data.forEach(row => {
+        // Chỉ hiển thị tối đa 500 dòng đầu tiên trên bảng để trình duyệt không bị đơ
+        // Dữ liệu Excel/PDF vẫn xuất đủ 100%
+        const displayData = data.slice(0, 500); 
+        
+        displayData.forEach(row => {
             const tr = document.createElement('tr');
             let shortAddr = row.address_string || "";
             if (shortAddr.length > 50) shortAddr = shortAddr.substring(0, 50) + "...";
             let dist2Way = (row.distance_km * 2).toFixed(1);
-            if(row.distance_km === 0) dist2Way = `<span style="color:red">0 (Sửa)</span>`;
+            if(row.distance_km === 0) dist2Way = `<span style="color:red">0</span>`;
             tr.innerHTML = `<td>${row.staff_code}</td><td><strong>${row.full_name}</strong></td><td>${row.vehicle_type}</td><td title="${row.address_string}">${shortAddr}</td><td>${dist2Way}</td><td>${row.working_days}</td><td>${(row.co2_total_kg||0).toFixed(1)}</td>`;
             tbody.appendChild(tr);
         });
+
+        if(data.length > 500) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="7" style="text-align:center; color:blue; font-style:italic;">... Còn ${data.length - 500} dòng nữa (Tải Excel để xem đầy đủ) ...</td>`;
+            tbody.appendChild(tr);
+        }
     }
 
     function renderCharts(data) {
@@ -189,7 +236,7 @@
         const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true } } };
         if(vehicleChartInstance) vehicleChartInstance.destroy();
         const ctx1 = document.getElementById('vehicleChart').getContext('2d');
-        vehicleChartInstance = new Chart(ctx1, {type:'doughnut', data:{labels:Object.keys(vehicles), datasets:[{data:Object.values(vehicles), backgroundColor:['#007bff','#dc3545','#28a745','#ffc107','#17a2b8']}]}, options: {...chartOptions, plugins: {title: {display: true, text: 'CƠ CẤU PHƯƠNG TIỆN'}}}});
+        vehicleChartInstance = new Chart(ctx1, {type:'doughnut', data:{labels:Object.keys(vehicles), datasets:[{data:Object.values(vehicles), backgroundColor:['#007bff','#dc3545','#28a745','#ffc107','#17a2b8','#6c757d']}]}, options: {...chartOptions, plugins: {title: {display: true, text: 'CƠ CẤU PHƯƠNG TIỆN'}}}});
         if(emissionChartInstance) emissionChartInstance.destroy();
         const ctx2 = document.getElementById('emissionChart').getContext('2d');
         emissionChartInstance = new Chart(ctx2, {type:'bar', data:{labels:Object.keys(co2ByVehicle), datasets:[{label:'kgCO2e', data:Object.values(co2ByVehicle), backgroundColor:'#dc3545'}]}, options: {...chartOptions, plugins: {title: {display: true, text: 'PHÁT THẢI (KG)'}}}});
@@ -216,7 +263,8 @@
         document.getElementById('statusLog').innerText = "Đang xử lý...";
         const map = {};
         rows.forEach(r => { let c = String(r['MaNV']||r['MANV']||r['MaThe']||r['ma_nv']).trim(); if(/^\d+$/.test(c)) c = c.padStart(5,'0'); map[c] = r['NgayCong']||r['NGAYCONG']||0; });
-        const {data} = await adminClient.from('emissions').select('*').range(0, 19999);
+        // Sử dụng fetchAllRecords để đảm bảo cập nhật đủ mọi người
+        const data = await fetchAllRecords('emissions', '*');
         let count = 0;
         for(let i of data) {
             let c = String(i.staff_code).trim(); if(/^\d+$/.test(c)) c = c.padStart(5,'0');
@@ -232,42 +280,20 @@
 
     async function resetData() { if(!confirm("CẢNH BÁO: Xóa sạch dữ liệu?")) return; document.getElementById('adminLog').innerText="Đang xóa..."; await adminClient.from('emissions').delete().neq('id', 0); alert("Đã xóa dữ liệu."); loadData(); document.getElementById('adminLog').innerText=""; }
     
-    // --- [HÀM HỖ TRỢ TẢI TOÀN BỘ DỮ LIỆU (KHÔNG GIỚI HẠN)] ---
-    async function fetchAllRecords(table, columns) {
-        let allRows = [];
-        let page = 0;
-        const pageSize = 1000;
-        while (true) {
-            const { data, error } = await adminClient
-                .from(table)
-                .select(columns)
-                .range(page * pageSize, (page + 1) * pageSize - 1);
-            
-            if (error) throw error;
-            if (!data || data.length === 0) break;
-            
-            allRows.push(...data);
-            if (data.length < pageSize) break; // Hết dữ liệu
-            page++;
-        }
-        return allRows;
-    }
-
-    // --- [V19] HÀM KIỂM TRA TIẾN ĐỘ CHÍNH XÁC (DÙNG PHÂN TRANG) ---
-    async function checkMissingV19(btn) {
+    // --- [V20] CHECK MISSING DÙNG FETCH ALL ---
+    async function checkMissingV20(btn) {
         const originalText = btn.innerText;
         btn.innerText = "⏳ Đang quét toàn bộ...";
         btn.disabled = true;
         document.getElementById('adminLog').innerText = "Đang tải dữ liệu (có thể mất 10-20s)...";
 
         try {
-            // 1. Tải TOÀN BỘ danh sách đã nộp (Dùng hàm fetchAllRecords)
+            // 1. Tải TOÀN BỘ danh sách đã nộp
             const submittedData = await fetchAllRecords('emissions', 'staff_code');
             
             // 2. Tải TOÀN BỘ danh sách nhân viên
             const allEmp = await fetchAllRecords('employees', 'staff_code, full_name');
 
-            // 3. Chuẩn hóa để so sánh
             const normalize = (code) => {
                 if(!code) return "";
                 let c = String(code).trim();
@@ -277,7 +303,6 @@
 
             const submittedSet = new Set(submittedData.map(i => normalize(i.staff_code)));
 
-            // 4. Lọc
             const missing = allEmp.filter(emp => {
                 const code = normalize(emp.staff_code);
                 return !submittedSet.has(code);
