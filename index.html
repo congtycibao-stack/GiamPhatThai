@@ -35,7 +35,7 @@
         .hidden { display: none !important; }
         .alert-box { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 10px 15px; border-radius: 6px; margin-top: 15px; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; }
         
-        /* CSS FIX LỖI CHECKBOX KTX (Dùng label bao quanh để bấm đâu cũng ăn) */
+        /* CSS FIX LỖI CHECKBOX KTX */
         .ktx-option { 
             display: flex; align-items: center; 
             background: #e8f5e9; padding: 10px; 
@@ -53,8 +53,6 @@
             <span class="popup-icon">🛡️</span>
             <h3 class="popup-title">THÔNG BÁO QUAN TRỌNG</h3>
             <div class="popup-text">
-                Chào mừng Quý CBNV Công ty <b>CI BAO</b>.<br><br>
-                Thực hiện quy định của Luật Bảo vệ Môi trường, công ty cần thu thập dữ liệu quãng đường di chuyển của nhân viên để tính toán <b>Kiểm kê Khí nhà kính (Phạm vi 3)</b>.<br><br>
                 <b>🔒 CAM KẾT BẢO MẬT:</b><br>
                 Chúng tôi hiểu rằng địa chỉ là thông tin cá nhân quan trọng. Công ty cam kết dữ liệu này <b>chỉ được sử dụng nội bộ</b> cho mục đích môi trường, tuyệt đối không chia sẻ cho bên thứ ba.<br><br>
                 <div style="background:#e8f5e9; padding:15px; border-radius:8px; font-size:14px; border-left:5px solid #28a745; text-align: left;">
@@ -165,10 +163,8 @@
         const addrSection = document.getElementById('addressSection');
         
         if (isChecked) {
-            // Nếu chọn KTX -> Ẩn địa chỉ, xóa giá trị Km để tránh gửi nhầm
             addrSection.style.display = 'none';
         } else {
-            // Nếu bỏ chọn -> Hiện lại
             addrSection.style.display = 'block';
         }
     }
@@ -274,7 +270,7 @@
         }
     }
 
-    // --- GỬI FORM (LOGIC MỚI: KTX HOẶC ĐI BỘ ĐỀU 0 KM) ---
+    // --- GỬI FORM (LOGIC GIỮ NGUYÊN) ---
     window.submitForm = async function() {
         const staffCode = document.getElementById('staffCode').value;
         const fullName = document.getElementById('fullName').value;
@@ -293,7 +289,7 @@
             dist = 0;
             co2 = 0;
         } 
-        // TRƯỜNG HỢP 2: KHÔNG Ở KTX (KỂ CẢ ĐI BỘ)
+        // TRƯỜNG HỢP 2: KHÔNG Ở KTX
         else {
             dist = parseFloat(document.getElementById('distanceKm').value);
             const detail = document.getElementById('detailAddress').value;
@@ -308,7 +304,7 @@
             const wText = w.options[w.selectedIndex].text;
             fullAddress = `${detail}, ${wText}, ${pText}`;
             
-            // Nếu đi bộ mà không ở KTX -> Vẫn tính 0 kg CO2 (Theo yêu cầu)
+            // Nếu đi bộ mà không ở KTX -> Vẫn tính 0 kg CO2
             if(vehicle === "Đi bộ") {
                 co2 = 0;
             }
@@ -327,7 +323,7 @@
             address_string: fullAddress,
             distance_km: dist,
             working_days: 0,
-            co2_total_kg: co2 // Mặc định tính sau hoặc 0 nếu KTX/Đi bộ
+            co2_total_kg: co2 
         };
 
         let error = null;
